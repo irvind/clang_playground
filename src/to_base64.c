@@ -18,8 +18,7 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
     int buffer_len = chunk_count * 4;
 
     uchar *result_buffer = (uchar*)calloc(buffer_len+1, sizeof(uchar));
-    int input_idx = 0;
-    for (int chunk_idx = 0; chunk_idx < chunk_count; chunk_idx++) {
+    for (int chunk_idx = 0, input_idx = 0; chunk_idx < chunk_count; chunk_idx++, input_idx++) {
         if ((chunk_idx < chunk_count - 1) || (input_length % 3 == 0)) {
             ushort sh1 = (input_str[input_idx*3] << 8) + input_str[input_idx*3+1];
             ushort sh2 = (input_str[input_idx*3+1] << 8) + input_str[input_idx*3+2];
@@ -60,8 +59,6 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
                 result_buffer[i] = '=';
             }
         }
-
-        input_idx++;
     }
 
     result_buffer[buffer_len] = '\0';
