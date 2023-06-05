@@ -3,12 +3,16 @@
 // https://theasciicode.com.ar/
 // https://www.rapidtables.com/convert/number/decimal-to-binary.html
 
+// Usage: cat lorem_content.txt | ./to_base64
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 typedef unsigned char uchar;
 typedef unsigned short ushort;
+
+// TODO: check allocation errors
 
 uchar* convert_to_base64(uchar *input_str, int input_length)
 {
@@ -29,6 +33,7 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
             result_buffer[chunk_idx*4+3] = (uchar)(input_str[(input_idx*3)+2] << 2) >> 2;
         } else if (input_length % 3 == 2) {
             ushort sh1 = (input_str[input_idx*3] << 8) + input_str[input_idx*3+1];
+
             result_buffer[chunk_idx*4] = input_str[input_idx*3] >> 2;
             result_buffer[chunk_idx*4+1] = (ushort)(sh1 << 6) >> 10;
             result_buffer[chunk_idx*4+2] = (uchar)(input_str[input_idx*3+1] << 4) >> 2;
@@ -66,6 +71,42 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
     return result_buffer;
 }
 
+uchar *get_buffer_from_stdin()
+{
+    int fib_prev = 21;
+    int fib_cur = 34;
+    int buf_size = fib_cur;
+    int idx = 0;
+
+    uchar *buf = malloc(buf_size+1);
+
+    while (1) {
+        int read_count = fread(
+            buf + idx,
+            sizeof(unsigned char),
+            buf_size - idx,
+            stdin
+        );
+        idx += read_count;
+
+        if (feof(stdin))
+            break;
+        if (ferror(stdin)) {
+            printf("There was an error during stdin read\n");
+            break;
+        }
+
+        int fib_tmp = fib_cur;
+        fib_cur = fib_cur + fib_prev;
+        fib_prev = fib_tmp;
+        buf_size = fib_cur;
+
+        buf = realloc(buf, buf_size+1);
+    }
+
+    return buf;
+}
+
 int main(void)
 {
     uchar *lorem = 
@@ -80,15 +121,15 @@ int main(void)
         "Pellentesque nec sollicitudin massa. Fusce maximus sapien "
         "tristique tempus gravida. Morbi eu porttitor sem. Maecenas "
         "sit amet mi at dui accumsan molestie";
-    // uchar *example_str = "ManManManM";
-    uchar *example_str = "Lorem";
-
-    printf("%s\n", lorem);
+    uchar *stdin_buf = get_buffer_from_stdin();
+    // printf("%s\n", stdin_buf);
  
-    uchar *result_base64 = convert_to_base64(lorem, strlen(lorem));
-    // uchar *result_base64 = convert_to_base64(example_str, strlen(example_str));
+    // uchar *result_base64 = convert_to_base64(lorem, strlen(lorem));
+    uchar *result_base64 = convert_to_base64(stdin_buf, strlen(stdin_buf));
     printf("converted to base64 lorem: %s\n", result_base64);
+
     free(result_base64);
+    free(stdin_buf);
 
     return 0;
 }
