@@ -3,14 +3,13 @@
 // https://theasciicode.com.ar/
 // https://www.rapidtables.com/convert/number/decimal-to-binary.html
 
+// Build: gcc -o to_base64 to_base64.c utils.c
 // Usage: cat lorem_content.txt | ./to_base64
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
+#include "utils.h"
 
 // TODO: check allocation errors
 
@@ -69,42 +68,6 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
     result_buffer[buffer_len] = '\0';
 
     return result_buffer;
-}
-
-uchar *get_buffer_from_stdin()
-{
-    int fib_prev = 21;
-    int fib_cur = 34;
-    int buf_size = fib_cur;
-    int idx = 0;
-
-    uchar *buf = malloc(buf_size+1);
-
-    while (1) {
-        int read_count = fread(
-            buf + idx,
-            sizeof(unsigned char),
-            buf_size - idx,
-            stdin
-        );
-        idx += read_count;
-
-        if (feof(stdin))
-            break;
-        if (ferror(stdin)) {
-            printf("There was an error during stdin read\n");
-            break;
-        }
-
-        int fib_tmp = fib_cur;
-        fib_cur = fib_cur + fib_prev;
-        fib_prev = fib_tmp;
-        buf_size = fib_cur;
-
-        buf = realloc(buf, buf_size+1);
-    }
-
-    return buf;
 }
 
 int main(void)
