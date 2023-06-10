@@ -10,6 +10,8 @@ uchar *get_buffer_from_stdin()
     int idx = 0;
 
     uchar *buf = malloc(buf_size+1);
+    if (buf == NULL)
+        return NULL;
 
     while (1) {
         int read_count = fread(

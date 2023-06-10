@@ -11,7 +11,14 @@
 #include <stdlib.h>
 #include "utils.h"
 
-// TODO: check allocation errors
+#define MASK_11 3
+#define MASK_1111 15
+#define MASK_11111100 124
+#define MASK_00111111 63
+#define MASK_1111110000 1008
+#define MASK_111111000000 4032
+#define EQUALS_SIGN_CODE 255
+
 
 uchar* convert_to_base64(uchar *input_str, int input_length)
 {
@@ -20,47 +27,50 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
         chunk_count += 1;
     int buffer_len = chunk_count * 4;
 
-    uchar *result_buffer = (uchar*)calloc(buffer_len+1, sizeof(uchar));
-    for (int chunk_idx = 0, input_idx = 0; chunk_idx < chunk_count; chunk_idx++, input_idx++) {
-        if ((chunk_idx < chunk_count - 1) || (input_length % 3 == 0)) {
-            ushort sh1 = (input_str[input_idx*3] << 8) + input_str[input_idx*3+1];
-            ushort sh2 = (input_str[input_idx*3+1] << 8) + input_str[input_idx*3+2];
+    uchar *result_buffer = (uchar*)malloc(buffer_len+1);
+    if (result_buffer == NULL)
+        return NULL;
 
-            result_buffer[chunk_idx*4] = input_str[input_idx*3] >> 2;
-            result_buffer[chunk_idx*4+1] = (ushort)(sh1 << 6) >> 10;
-            result_buffer[chunk_idx*4+2] = (ushort)(sh2 << 4) >> 10;
-            result_buffer[chunk_idx*4+3] = (uchar)(input_str[(input_idx*3)+2] << 2) >> 2;
+    for (int i = 0; i < chunk_count; i++) {
+        if ((i < chunk_count - 1) || (input_length % 3 == 0)) {
+            ushort sh1 = (input_str[i*3] << 8) + input_str[i*3+1];
+            ushort sh2 = (input_str[i*3+1] << 8) + input_str[i*3+2];
+
+            result_buffer[i*4] = (input_str[i*3] & MASK_11111100) >> 2;
+            result_buffer[i*4+1] = (sh1 & MASK_1111110000) >> 4;
+            result_buffer[i*4+2] = (sh2 & MASK_111111000000) >> 6;
+            result_buffer[i*4+3] = input_str[(i*3)+2] & MASK_00111111;
         } else if (input_length % 3 == 2) {
-            ushort sh1 = (input_str[input_idx*3] << 8) + input_str[input_idx*3+1];
+            ushort sh1 = (input_str[i*3] << 8) + input_str[i*3+1];
 
-            result_buffer[chunk_idx*4] = input_str[input_idx*3] >> 2;
-            result_buffer[chunk_idx*4+1] = (ushort)(sh1 << 6) >> 10;
-            result_buffer[chunk_idx*4+2] = (uchar)(input_str[input_idx*3+1] << 4) >> 2;
-            result_buffer[chunk_idx*4+3] = 255;
+            result_buffer[i*4] = (input_str[i*3] & MASK_11111100) >> 2;
+            result_buffer[i*4+1] = (sh1 & MASK_1111110000) >> 4;
+            result_buffer[i*4+2] = (input_str[i*3+1] & MASK_1111) << 2;
+            result_buffer[i*4+3] = EQUALS_SIGN_CODE;
         } else {    // input_length % 3 == 1
-            result_buffer[chunk_idx*4] = input_str[input_idx*3] >> 2;
-            result_buffer[chunk_idx*4+1] = (uchar)(input_str[input_idx*3] << 6) >> 2;
-            result_buffer[chunk_idx*4+2] = 255;
-            result_buffer[chunk_idx*4+3] = 255;
+            result_buffer[i*4] = input_str[i*3] >> 2;
+            result_buffer[i*4+1] = (input_str[i*3] & MASK_11) << 4;
+            result_buffer[i*4+2] = EQUALS_SIGN_CODE;
+            result_buffer[i*4+3] = EQUALS_SIGN_CODE;
         }
 
-        for (int i = chunk_idx*4; i < chunk_idx*4+4; i++) {
-            uchar sextet  = result_buffer[i];
+        for (int j = i*4; j < i*4+4; j++) {
+            uchar sextet  = result_buffer[j];
             if (sextet <= 25) {
                 // Uppercase characters 65
-                result_buffer[i] = 'A' + sextet;
+                result_buffer[j] = 'A' + sextet;
             } else if (sextet <= 51) {
                 // Lowercase characters
-                result_buffer[i] = 'a' + (sextet - 26);
+                result_buffer[j] = 'a' + (sextet - 26);
             } else if (sextet <= 61) {
                 // Numbers
-                result_buffer[i] = '0' + (sextet - 52);
+                result_buffer[j] = '0' + (sextet - 52);
             } else if (sextet == 62) {
-                result_buffer[i] = '+';
+                result_buffer[j] = '+';
             } else if (sextet == 63) {
-                result_buffer[i] = '/';
+                result_buffer[j] = '/';
             } else {    // sextet == 255
-                result_buffer[i] = '=';
+                result_buffer[j] = '=';
             }
         }
     }
@@ -85,11 +95,19 @@ int main(void)
         "tristique tempus gravida. Morbi eu porttitor sem. Maecenas "
         "sit amet mi at dui accumsan molestie";
     uchar *stdin_buf = get_buffer_from_stdin();
-    // printf("%s\n", stdin_buf);
+    if (stdin_buf == NULL) {
+        printf("Cannot allocate memory\n");
+        exit(EXIT_FAILURE);
+    }
  
     // uchar *result_base64 = convert_to_base64(lorem, strlen(lorem));
     uchar *result_base64 = convert_to_base64(stdin_buf, strlen(stdin_buf));
-    printf("converted to base64 lorem: %s\n", result_base64);
+    if (result_base64 == NULL) {
+        printf("Cannot allocate memory\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("%s\n", result_base64);
 
     free(result_base64);
     free(stdin_buf);
