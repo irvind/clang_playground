@@ -13,12 +13,12 @@
 
 #define MASK_11 3
 #define MASK_1111 15
+#define MASK_111111 63
 #define MASK_11111100 124
-#define MASK_00111111 63
 #define MASK_1111110000 1008
 #define MASK_111111000000 4032
-#define EQUALS_SIGN_CODE 255
 
+#define EQUALS_SIGN_CODE 255
 
 uchar* convert_to_base64(uchar *input_str, int input_length)
 {
@@ -39,7 +39,7 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
             result_buffer[i*4] = (input_str[i*3] & MASK_11111100) >> 2;
             result_buffer[i*4+1] = (sh1 & MASK_1111110000) >> 4;
             result_buffer[i*4+2] = (sh2 & MASK_111111000000) >> 6;
-            result_buffer[i*4+3] = input_str[(i*3)+2] & MASK_00111111;
+            result_buffer[i*4+3] = input_str[(i*3)+2] & MASK_111111;
         } else if (input_length % 3 == 2) {
             ushort sh1 = (input_str[i*3] << 8) + input_str[i*3+1];
 
@@ -82,25 +82,12 @@ uchar* convert_to_base64(uchar *input_str, int input_length)
 
 int main(void)
 {
-    uchar *lorem = 
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-        "Vivamus luctus fringilla volutpat. Etiam suscipit, neque "
-        "et scelerisque rutrum, tortor libero efficitur dui, sed "
-        "placerat nulla sem vitae dui. Mauris ac eros blandit, "
-        "feugiat leo in, ornare mi. Integer mollis risus quis dui "
-        "dictum volutpat. Vivamus dictum justo eu placerat dictum. "
-        "Class aptent taciti sociosqu ad litora torquent per conubia "
-        "nostra, per inceptos himenaeos. Nam sodales volutpat ex. "
-        "Pellentesque nec sollicitudin massa. Fusce maximus sapien "
-        "tristique tempus gravida. Morbi eu porttitor sem. Maecenas "
-        "sit amet mi at dui accumsan molestie";
     uchar *stdin_buf = get_buffer_from_stdin();
     if (stdin_buf == NULL) {
         printf("Cannot allocate memory\n");
         exit(EXIT_FAILURE);
     }
  
-    // uchar *result_base64 = convert_to_base64(lorem, strlen(lorem));
     uchar *result_base64 = convert_to_base64(stdin_buf, strlen(stdin_buf));
     if (result_base64 == NULL) {
         printf("Cannot allocate memory\n");
